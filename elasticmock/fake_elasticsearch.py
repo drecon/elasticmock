@@ -102,6 +102,36 @@ class FakeElasticsearch(Elasticsearch):
 
         return result
 
+    @query_params('_source', '_source_exclude', '_source_include', 'fields',
+                  'parent', 'preference', 'realtime', 'refresh', 'routing', 'version',
+                  'version_type')
+    def get_indices(self, index, id, doc_type='_all', params=None):
+        result = None
+        if index in self.__documents_dict:
+            for document in self.__documents_dict[index]:
+                if document.get('_id') == id:
+                    if doc_type == '_all':
+                        result = document
+                        break
+                    else:
+                        if document.get('_type') == doc_type:
+                            result = document
+                            break
+
+        if result:
+            result['found'] = True
+        else:
+            error_data = {
+                '_index': index,
+                '_type': doc_type,
+                '_id': id,
+                'found': False
+            }
+            raise NotFoundError(404, json.dumps(error_data))
+
+        return result
+    
+    
     @query_params('_source', '_source_exclude', '_source_include', 'parent',
                   'preference', 'realtime', 'refresh', 'routing', 'version',
                   'version_type')
